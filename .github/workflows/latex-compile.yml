@@ -29,11 +29,7 @@ jobs:
         with:
           root_file: elegantbook-cn.tex
           latexmk_use_xelatex: true
-          extra_system_packages: |
-            texlive-xetex
-            texlive-fonts-extra
-            texlive-lang-chinese
-            texlive-science
+          docker_image: ghcr.io/xu-cheng/texlive-full:latest
           pre_compile: |
             # 设置所有文件的权限为777，确保编译过程中没有权限问题
             chmod -R 777 .
