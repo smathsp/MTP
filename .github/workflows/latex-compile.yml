@@ -3,8 +3,8 @@ name: Compile LaTeX and Release PDF
 on:
   push:
     tags:
-      - "v*" # 当推送带有v开头的标签时触发，例如 v1.0, v2.1.3
-  workflow_dispatch: # 允许手动触发工作流程
+      - "v*"
+  workflow_dispatch:
 
 jobs:
   build:
@@ -12,27 +12,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 获取完整的历史记录，确保所有资源都可用
-
-      - name: Cache LaTeX packages
-        uses: actions/cache@v3
-        with:
-          path: /tmp/texlive
-          key: texlive-${{ hashFiles('**/*.tex') }}
-          restore-keys: |
-            texlive-
+          fetch-depth: 0
 
       - name: Setup TeX Live
         uses: xu-cheng/latex-action@v3
         with:
-          root_file: elegantbook-cn.tex
+          root_file: 数学教学心理学复习.tex
           latexmk_use_xelatex: true
           docker_image: ghcr.io/xu-cheng/texlive-full:latest
-          pre_compile: |
-            # 设置所有文件的权限为777，确保编译过程中没有权限问题
-            chmod -R 777 .
+          continue_on_error: false
 
       - name: Get tag name
         id: tag
@@ -46,7 +36,14 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
+          body: |
+            # LaTeX文档自动构建发布
+
+            此PDF文档由GitHub Actions自动构建并发布。
+
+            发布时间: ${{ github.event.repository.updated_at }}
+
           draft: false
           prerelease: false
           files: |
-            elegantbook-cn.pdf
+            数学教学心理学复习.pdf

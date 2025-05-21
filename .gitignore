@@ -17,6 +17,8 @@ elegant*-cn.pdf
 elegant*-en.pdf
 *.dates
 
+out/
+
 ## Intermediate documents:
 *.dvi
 *.xdv
