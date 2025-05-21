@@ -41,7 +41,7 @@ jobs:
 
             此PDF文档由GitHub Actions自动构建并发布。
 
-            发布时间: ${{ github.event.repository.updated_at }}
+            发布时间: ${{ github.event.repository.updated_at }} (UTC时间，+8小时为北京时间)
 
           draft: false
           prerelease: false
