@@ -16,31 +16,6 @@ jobs:
         with:
           fetch-depth: 0 # 获取完整的历史记录，确保所有资源都可用
 
-      - name: Find main LaTeX file
-        id: find_tex
-        run: |
-          # 查找根目录中的所有.tex文件
-          TEX_FILES=$(find . -maxdepth 1 -name "*.tex" -type f)
-
-          # 查找使用documentclass的主文件
-          FOUND=false
-          for file in $TEX_FILES; do
-            if grep -q "\\begin{document}" "$file"; then
-              BASENAME=$(basename $file)
-              echo "root_file=$BASENAME" >> $GITHUB_OUTPUT
-              echo "pdf_name=${BASENAME%.*}.pdf" >> $GITHUB_OUTPUT
-              echo "找到主LaTeX文件: $BASENAME"
-              FOUND=true
-              break
-            fi
-          done
-
-          # 如果没有找到任何主文件，则报错并退出
-          if [ "$FOUND" = false ]; then
-            echo "错误: 未找到包含\\begin{document}的主LaTeX文件!"
-            exit 1
-          fi
-
       - name: Cache LaTeX packages
         uses: actions/cache@v3
         with:
@@ -52,7 +27,7 @@ jobs:
       - name: Setup TeX Live
         uses: xu-cheng/latex-action@v3
         with:
-          root_file: ${{ steps.find_tex.outputs.root_file }}
+          root_file: elegantbook-cn.tex
           latexmk_use_xelatex: true
           extra_system_packages: |
             texlive-xetex
@@ -60,7 +35,8 @@ jobs:
             texlive-lang-chinese
             texlive-science
           pre_compile: |
-            chmod -R 755 ./figure ./image
+            # 设置所有文件的权限为777，确保编译过程中没有权限问题
+            chmod -R 777 .
 
       - name: Get tag name
         id: tag
@@ -77,4 +53,4 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ${{ steps.find_tex.outputs.pdf_name }}
+            elegantbook-cn.pdf
