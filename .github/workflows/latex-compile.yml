@@ -3,33 +3,69 @@ name: Compile LaTeX and Release PDF
 on:
   push:
     tags:
-      - 'v*'  # 当推送带有v开头的标签时触发，例如 v1.0, v2.1.3
-  workflow_dispatch:  # 允许手动触发工作流程
+      - "v*" # 当推送带有v开头的标签时触发，例如 v1.0, v2.1.3
+  workflow_dispatch: # 允许手动触发工作流程
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # 获取完整的历史记录，确保所有资源都可用
-        
+          fetch-depth: 0 # 获取完整的历史记录，确保所有资源都可用
+
+      - name: Find main LaTeX file
+        id: find_tex
+        run: |
+          # 查找根目录中的所有.tex文件
+          TEX_FILES=$(find . -maxdepth 1 -name "*.tex" -type f)
+
+          # 查找使用documentclass的主文件
+          FOUND=false
+          for file in $TEX_FILES; do
+            if grep -q "\\begin{document}" "$file"; then
+              BASENAME=$(basename $file)
+              echo "root_file=$BASENAME" >> $GITHUB_OUTPUT
+              echo "pdf_name=${BASENAME%.*}.pdf" >> $GITHUB_OUTPUT
+              echo "找到主LaTeX文件: $BASENAME"
+              FOUND=true
+              break
+            fi
+          done
+
+          # 如果没有找到任何主文件，则报错并退出
+          if [ "$FOUND" = false ]; then
+            echo "错误: 未找到包含\\begin{document}的主LaTeX文件!"
+            exit 1
+          fi
+
+      - name: Cache LaTeX packages
+        uses: actions/cache@v3
+        with:
+          path: /tmp/texlive
+          key: texlive-${{ hashFiles('**/*.tex') }}
+          restore-keys: |
+            texlive-
+
       - name: Setup TeX Live
         uses: xu-cheng/latex-action@v3
         with:
-          root_file: elegantbook-cn.tex
+          root_file: ${{ steps.find_tex.outputs.root_file }}
           latexmk_use_xelatex: true
-          packages: |
-            scheme-full
-            ctex
-            newtx
-            
+          extra_system_packages: |
+            texlive-xetex
+            texlive-fonts-extra
+            texlive-lang-chinese
+            texlive-science
+          pre_compile: |
+            chmod -R 755 ./figure ./image
+
       - name: Get tag name
         id: tag
         run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-        
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
@@ -41,4 +77,4 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            elegantbook-cn.pdf
+            ${{ steps.find_tex.outputs.pdf_name }}
